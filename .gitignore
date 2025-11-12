@@ -1,0 +1,33 @@
+Python bytecode and build artifacts
+pycache/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+*.egg
+build/
+dist/
+
+Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.env
+
+OS-generated files
+.DS_Store
+Thumbs.db
+
+IDE/project settings
+.vscode/
+.idea/
+
+Streamlit secrets (never commit this)
+.streamlit/secrets.toml
+
+Logs and temp files
+*.log
+*.tmp
+*.swp
