@@ -7,35 +7,84 @@ from publications_search import PublicationChatbot
 import os
 import subprocess
 
-st.set_page_config(page_title="DUK ScholarSearch", page_icon="📚", layout="wide", initial_sidebar_state="expanded")
+# ----------------------------
+# Page configuration
+# ----------------------------
+st.set_page_config(
+    page_title="DUK ScholarSearch",
+    page_icon="📚",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
+# ----------------------------
+# Styles 
+# ----------------------------
+st.markdown("""
+<style>
+.main-header{
+  font-size:2.6rem; font-weight:800; color:#1E3A8A; text-align:center;
+  padding:1rem; background:linear-gradient(90deg,#EFF6FF 0%,#DBEAFE 100%); border-radius:10px; margin-bottom:1rem;
+}
+.sub-header{
+  font-size:1.3rem; font-weight:600; color:#1F2937; text-align:center; margin-bottom:1.2rem;
+}
+.stButton>button{
+  width:100%; background-color:#1E3A8A; color:white; font-weight:700;
+  border-radius:8px; padding:0.55rem 1rem; border:none;
+}
+.stButton>button:hover{ background-color:#1E40AF; }
+div[data-testid="stSidebar"] .stButton>button{
+  background-color:#1E3A8A; color:white; font-weight:700;
+}
+div[data-testid="stSidebar"] .stButton>button:hover{ background-color:#1E40AF; }
+.publication-card{ background-color:#F9FAFB; padding:1rem; border-radius:8px; border-left:4px solid #1E3A8A; margin-bottom:1rem;}
+.stats-box{ background-color:#EFF6FF; padding:1rem; border-radius:8px; text-align:center; border:2px solid #DBEAFE; }
+</style>
+""", unsafe_allow_html=True)
+
+# ----------------------------
+# Paths and constants
+# ----------------------------
 PUBLICATIONS_FOLDER = "publications"
 FACULTY_LISTS_FILE = "faculty_list.md"
-MAIN_PUBLICATIONS_FILE = "publications/2025.md"
+MAIN_PUBLICATIONS_FILE = "publications/2025.md"  
 
-os.makedirs(PUBLICATIONS_FOLDER, exist_ok=True)
+# ----------------------------
+# Ensure directories
+# ----------------------------
+os.makedirs(PUBLICATIONS_FOLDER, exist_ok=True)  
 
+# ----------------------------
+# Session state
+# ----------------------------
 if 'chatbot' not in st.session_state:
     with st.spinner("🔄 Initializing publication search system..."):
-        st.session_state.chatbot = PublicationChatbot(PUBLICATIONS_FOLDER, FACULTY_LISTS_FILE)
+        st.session_state.chatbot = PublicationChatbot(PUBLICATIONS_FOLDER, FACULTY_LISTS_FILE)  # [attached_file:1]
     st.session_state.chat_history = []
     st.session_state.current_query = ""
     st.session_state.role = "guest"
     st.session_state.publications_input = ""
     st.session_state.source_input = ""
-    st.session_state.clear_inputs = False
+    st.session_state.clear_inputs = False  
 
-st.markdown('<div class="main-header">📚 DUK ScholarSearch: Fast Publication Discovery</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Search publications</div>', unsafe_allow_html=True)
+# ----------------------------
+# Header
+# ----------------------------
+st.markdown('<div class="main-header">📚 DUK ScholarSearch</div>', unsafe_allow_html=True)  # [attached_file:1]
+st.markdown('<div class="sub-header">Search publications</div>', unsafe_allow_html=True)  # [attached_file:1]
 
+# ----------------------------
+# Helpers
+# ----------------------------
 schools = {
     "SoDS": "School of Digital Sciences",
     "SoCSE": "School of Computer Science and Engineering",
     "SoESA": "School of Electronic Systems and Automation",
     "SoI": "School of Informatics",
     "SoDiHLA": "School of Digital Humanities and Liberal Arts"
-}
-school_aliases = { **{k.lower(): k for k in schools.keys()}, **{v.lower(): k for k, v in schools.items()} }
+}  
+school_aliases = { **{k.lower(): k for k in schools.keys()}, **{v.lower(): k for k, v in schools.items()} }  # [attached_file:1]
 
 def is_school_query(text: str):
     t = (text or "").strip().lower()
@@ -48,7 +97,7 @@ def is_school_query(text: str):
             if tail == code.lower() or code.lower() in tail: return code
         for code, fullname in schools.items():
             if fullname.lower() in tail: return code
-    return None
+    return None  
 
 def is_plain_name_query(text: str):
     t = (text or "").strip()
@@ -56,8 +105,23 @@ def is_plain_name_query(text: str):
     tokens = re.split(r'\s+', t)
     if len(tokens) == 0 or len(tokens) > 6: return None
     if not any(re.search(r'[A-Za-z]', tok) for tok in tokens): return None
-    return t
+    return t 
 
+def route_query(q: str) -> str:
+    q = (q or "").strip()
+    if not q: return ""
+    sc = is_school_query(q)
+    if sc: return f"Publications of faculty members of {sc}"
+    nm = is_plain_name_query(q)
+    if nm: return f"Publications of {nm}"
+    return q  
+
+def sorted_unique(items):
+    return sorted(set(items or []), key=lambda n: n.lower())  
+
+# ----------------------------
+# SIDEBAR 
+# ----------------------------
 with st.sidebar:
     st.markdown("### 🔐 Admin Login")
     if st.session_state.role != "admin":
@@ -70,7 +134,7 @@ with st.sidebar:
     else:
         st.success("Admin mode active")
         if st.button("Logout"):
-            st.session_state.role = "guest"; st.rerun()
+            st.session_state.role = "guest"; st.rerun()  
 
     st.markdown("---")
 
@@ -82,60 +146,68 @@ with st.sidebar:
     )
     if selected_school and st.button("🔍 Search School Publications"):
         st.session_state.current_query = f"faculty members of {selected_school}"
-        st.rerun()
+        st.rerun()  # [attached_file:1]
 
     st.markdown("---")
-    
     st.markdown("#### 👥 Search by Faculty")
-    school_filter = st.selectbox("Select a faculty…", ["All"] + list(schools.keys()), key="faculty_filter")
-
-    def sorted_unique(items):
-        return sorted(set(items or []), key=lambda n: n.lower())
+    school_filter = st.selectbox("Select a faculty…", ["All"] + list(schools.keys()), key="faculty_filter")  # [attached_file:1]
 
     def trigger_faculty_search(name: str):
         st.session_state.current_query = name
-        st.session_state.faculty_clicked = name
+        st.session_state.faculty_clicked = name  
 
     if school_filter == "All":
         all_fac = []
         for _, facs in st.session_state.chatbot.school_faculties.items():
             all_fac.extend(facs or [])
         for faculty in sorted_unique(all_fac):
-            if st.button(faculty, key=f"fac_all_{faculty}", help="Click to view publications", type="secondary"):
+            if st.button(faculty, key=f"fac_all_{faculty}", help="Click to view publications"):
                 trigger_faculty_search(faculty); st.rerun()
     else:
         facs = st.session_state.chatbot.school_faculties.get(school_filter.upper(), [])
         for faculty in sorted_unique(facs):
-            if st.button(faculty, key=f"fac_{school_filter}_{faculty}", help="Click to view publications", type="secondary"):
+            if st.button(faculty, key=f"fac_{school_filter}_{faculty}", help="Click to view publications"):
                 trigger_faculty_search(faculty); st.rerun()
-
     st.markdown("---")
     st.markdown("### 📊 System Statistics")
-    unique_sources = set()
+
+    # Deterministic newsletters counting: only unique PDF basenames
+    unique_pdfs = set()
     for src in st.session_state.chatbot.all_sources:
-        source_text = src.get('source', '')
-        if source_text and '.pdf' in source_text:
-            pdf_name = source_text.split('/')[-1].strip()
-            unique_sources.add(pdf_name)
-        elif source_text and not source_text.endswith('.md'):
-            unique_sources.add(source_text)
-    total_docs = len(unique_sources)
+        s = (src or {}).get('source', '') or ''
+        s = s.strip()
+        if not s:
+            continue
+        if s.lower().endswith(".pdf") or ".pdf" in s.lower():
+            # extract last path segment and strip query/commas/spaces
+            part = s.split("/")[-1].split("\\")[-1]
+            part = part.split("?")[0].split(",")[0].strip()
+            if part.lower().endswith(".pdf"):
+                unique_pdfs.add(part.lower())
+    total_docs = len(unique_pdfs)
+
     total_schools = len(st.session_state.chatbot.school_faculties)
     total_faculty = sum(len(fac or []) for fac in st.session_state.chatbot.school_faculties.values())
+
     c1, c2 = st.columns(2)
     with c1:
         st.metric("Newsletters", total_docs)
         st.metric("Schools", total_schools)
     with c2:
-        st.metric("Faculty", total_faculty)
+        st.metric("Faculty", total_faculty)  
 
+# ----------------------------
 # Tabs
+# ----------------------------
 if st.session_state.role == "admin":
     tab1, tab2, tab3 = st.tabs(["🔍 Search", "🗂️ Add Publications", "📋 Search History"])
 else:
     tab1, tab3 = st.tabs(["🔍 Search", "📋 Search History"])
-    tab2 = None
+    tab2 = None  
 
+# ----------------------------
+# Search tab
+# ----------------------------
 with tab1:
     st.markdown("### Search publications")
     col1, col2 = st.columns([3, 1])
@@ -147,22 +219,11 @@ with tab1:
             value=st.session_state.get('current_query', '')
         )
     with col2:
-        search_button = st.button("Search", use_container_width=True)
-
-    # Example queries removed as requested
+        search_button = st.button("Search", use_container_width=True)  
 
     if st.session_state.get('current_query'):
         query = st.session_state.current_query
-        st.session_state.current_query = ''
-
-    def route_query(q: str) -> str:
-        q = (q or "").strip()
-        if not q: return ""
-        sc = is_school_query(q)
-        if sc: return f"Publications of faculty members of {sc}"
-        nm = is_plain_name_query(q)
-        if nm: return f"Publications of {nm}"
-        return q
+        st.session_state.current_query = ''  
 
     if search_button or query:
         if (query or "").strip():
@@ -176,9 +237,11 @@ with tab1:
             st.markdown("### 📖 Results")
             st.markdown(answer)
         else:
-            st.info("ℹ️ Please enter a search query")
+            st.info("ℹ️ Please enter a search query")  
 
+# ----------------------------
 # Add Publications (admin)
+# ----------------------------
 def append_publications_to_file(publications_text: str, source: str) -> int:
     path = Path(MAIN_PUBLICATIONS_FILE)
     if not path.exists():
@@ -188,7 +251,7 @@ def append_publications_to_file(publications_text: str, source: str) -> int:
     block = "(Source: " + source.strip() + ")\n" + "\n".join(pubs) + "\n\n"
     with open(path, "a", encoding="utf-8") as f:
         f.write(block)
-    return len(pubs)
+    return len(pubs)  
 
 def commit_to_github(commit_message: str) -> tuple[bool, str]:
     try:
@@ -207,7 +270,7 @@ def commit_to_github(commit_message: str) -> tuple[bool, str]:
     except subprocess.CalledProcessError as e:
         return False, f"Git error: {e}"
     except Exception as e:
-        return False, f"Error: {e}"
+        return False, f"Error: {e}"  
 
 if tab2 is not None:
     with tab2:
@@ -256,10 +319,12 @@ if tab2 is not None:
                     time.sleep(1)
                     st.rerun()
                 else:
-                    st.error(f"Failed to commit: {msg}")
+                    st.error(f"Failed to commit: {msg}")  
 
-with tab3:
-    st.markdown("### 📋 Search History")
+# ----------------------------
+# Search History
+# ----------------------------
+with st.expander("📋 Search History", expanded=False):
     if st.session_state.chat_history:
         if st.button("🗑️ Clear History"):
             st.session_state.chat_history = []; st.rerun()
@@ -269,12 +334,15 @@ with tab3:
             with st.expander(f"🔍 {entry['query']} - {entry['timestamp']}"):
                 st.markdown(entry['answer'])
     else:
-        st.info("ℹ️ No search history yet. Start searching to see your history here!")
+        st.info("ℹ️ No search history yet. Start searching to see your history here!")  # [attached_file:1]
 
+# ----------------------------
+# Footer
+# ----------------------------
 st.markdown("---")
 st.markdown("""
 <div style='text-align: center; color: #6B7280; padding: 1rem;'>
     <p>📚 Digital University Kerala - Publication Search System</p>
     <p>Powered by Sentence Transformers & FAISS</p>
 </div>
-""", unsafe_allow_html=True)
+""", unsafe_allow_html=True) 
