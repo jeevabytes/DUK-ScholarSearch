@@ -151,7 +151,7 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown("#### 👥 Search by Faculty")
-    school_filter = st.selectbox("Select a faculty…", ["All"] + list(schools.keys()), key="faculty_filter")
+    school_filter = st.selectbox("Select a faculty:", ["All"] + list(schools.keys()), key="faculty_filter")
 
     def trigger_faculty_search(name: str):
         st.session_state.current_query = name
@@ -356,4 +356,5 @@ st.markdown("""
     <p>Powered by Sentence Transformers & FAISS</p>
 </div>
 """, unsafe_allow_html=True)
+
 
