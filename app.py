@@ -322,25 +322,6 @@ if tab2 is not None:
                     st.error(f"Failed to commit: {msg}")  
 
 # ----------------------------
-# Search History
-# ----------------------------
-with st.expander("📋 Search History", expanded=False):
-    if st.session_state.chat_history:
-        if st.button("🗑️ Clear History"):
-            st.session_state.chat_history = []
-            st.rerun()
-        st.markdown(f"**Total searches: {len(st.session_state.chat_history)}**")
-        st.markdown("---")
-
-        # Render each entry without inner expanders
-        for entry in st.session_state.chat_history:
-            st.markdown(f"#### 🔍 {entry['query']} — {entry['timestamp']}")
-            st.markdown(entry["answer"])
-            st.markdown("---")
-    else:
-        st.info("ℹ️ No search history yet. Start searching to see your history here!")
-
-# ----------------------------
 # Footer
 # ----------------------------
 st.markdown("---")
@@ -350,4 +331,5 @@ st.markdown("""
     <p>Powered by Sentence Transformers & FAISS</p>
 </div>
 """, unsafe_allow_html=True) 
+
 
