@@ -7,6 +7,15 @@ from pathlib import Path
 MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
 MONTH2NUM = {m:i+1 for i,m in enumerate(MONTHS)}
 
+# Canonical school codes for display and storage
+CANONICAL_CODES = {
+    'SODS': 'SoDS',
+    'SOCSE': 'SoCSE',
+    'SOESA': 'SoESA',
+    'SOI': 'SoI',
+    'SODIHLA': 'SoDiHLA'
+}
+
 class PublicationChatbot:
     def __init__(self, publications_folder, faculty_lists_file):
         self.all_documents = []
@@ -58,7 +67,8 @@ class PublicationChatbot:
                             names.append(name)
 
                 if names:
-                    self.school_faculties[school_code.upper()] = names
+                    # Store under canonical mixed-case key (not uppercased)
+                    self.school_faculties[school_code] = names
 
     def load_publication_files(self, folder_path):
         """Load all publication files with flexible sectioning:
@@ -353,8 +363,9 @@ class PublicationChatbot:
         return pubs, pub_sources
 
     def get_school_faculties(self, school_code):
-        """Get faculty list for a specific school"""
-        return self.school_faculties.get(school_code.upper(), [])
+        """Get faculty list for a specific school (accepts upper or canonical)"""
+        key = CANONICAL_CODES.get(school_code.upper(), school_code)
+        return self.school_faculties.get(key, [])
 
     def _unique_sources(self, sources):
         """Return list of unique source dicts (dedup by source string)"""
@@ -396,7 +407,8 @@ class PublicationChatbot:
                 faculty_names = self.get_school_faculties(school)
 
                 if not faculty_names:
-                    return f"Could not find faculty list for {school}."
+                    # Keep message in uppercase code if data missing; optional to map back
+                    return f"Could not find faculty list for {CANONICAL_CODES.get(school, school)}."
 
                 faculty_pub_counts = {}
                 all_pubs = []
@@ -412,7 +424,8 @@ class PublicationChatbot:
                             all_sources.append(s)
 
                 if all_pubs:
-                    summary = f"Publications by {school} faculty members ({len(faculty_names)} faculty members):\n\n"
+                    display_school = CANONICAL_CODES.get(school, school)
+                    summary = f"Publications by {display_school} faculty members ({len(faculty_names)} faculty members):\n\n"
                     summary += "**Faculty Publication Count:**\n"
                     for name in faculty_names:
                         count = faculty_pub_counts.get(name, 0)
@@ -421,10 +434,10 @@ class PublicationChatbot:
                     summary += f"\n**Total: {len(all_pubs)} publication{'s' if len(all_pubs) != 1 else ''}**\n\n"
                     summary += "---\n\n"
                     summary += "\n".join(f"{i}. {p}" for i, p in enumerate(all_pubs, 1))
-                    summary += self.format_sources(all_sources, descending=True)  
+                    summary += self.format_sources(all_sources, descending=True)
                     return summary
 
-                return f"No publications found for {school} faculties."
+                return f"No publications found for {CANONICAL_CODES.get(school, school)} faculties."
 
         # Extract faculty name from query
         name_patterns = [
@@ -447,7 +460,7 @@ class PublicationChatbot:
                 return (
                     f"Publications by {name}:\n\n"
                     + "\n".join(f"{i}. {p}" for i, p in enumerate(pubs, 1))
-                    + self.format_sources(sources, descending=True)  
+                    + self.format_sources(sources, descending=True)
                 )
             return f"No publications found for {name}."
 
