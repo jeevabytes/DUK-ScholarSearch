@@ -328,15 +328,21 @@ if tab2 is not None:
 with tab3:
     st.markdown("### 📋 Search History")
     if st.session_state.chat_history:
-        if st.button("🗑️ Clear History"):
-            st.session_state.chat_history = []
-            st.rerun()
-        st.markdown(f"**Total searches: {len(st.session_state.chat_history)}**")
+        top_cols = st.columns([3, 1])
+        with top_cols[0]:
+            st.markdown(f"**Total searches: {len(st.session_state.chat_history)}**")
+        with top_cols[1]:
+            if st.button("🗑️ Clear History", use_container_width=True):
+                st.session_state.chat_history = []
+                st.rerun()
+
         st.markdown("---")
-        for entry in st.session_state.chat_history:
-            st.markdown(f"#### 🔍 {entry['query']} — {entry['timestamp']}")
-            st.markdown(entry["answer"])
-            st.markdown("---")
+
+        # Each entry in its own top-level expander (no nesting)
+        for i, entry in enumerate(st.session_state.chat_history, start=1):
+            label = f"🔎 {entry['query']} — {entry['timestamp']}"
+            with st.expander(label, expanded=False):
+                st.markdown(entry["answer"])
     else:
         st.info("ℹ️ No search history yet. Start searching to see your history here!")
 
@@ -350,3 +356,4 @@ st.markdown("""
     <p>Powered by Sentence Transformers & FAISS</p>
 </div>
 """, unsafe_allow_html=True)
+
