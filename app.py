@@ -165,7 +165,7 @@ with st.sidebar:
             if st.button(faculty, key=f"fac_all_{faculty}", help="Click to view publications"):
                 trigger_faculty_search(faculty); st.rerun()
     else:
-        facs = st.session_state.chatbot.school_faculties.get(school_filter.upper(), [])
+        facs = st.session_state.chatbot.get_school_faculties(school_filter)
         for faculty in sorted_unique(facs):
             if st.button(faculty, key=f"fac_{school_filter}_{faculty}", help="Click to view publications"):
                 trigger_faculty_search(faculty); st.rerun()
@@ -356,5 +356,6 @@ st.markdown("""
     <p>Powered by Sentence Transformers & FAISS</p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
