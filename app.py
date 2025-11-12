@@ -18,7 +18,7 @@ st.set_page_config(
 )
 
 # ----------------------------
-# Styles 
+# Styles (dark blue theme + big headers)
 # ----------------------------
 st.markdown("""
 <style>
@@ -48,31 +48,31 @@ div[data-testid="stSidebar"] .stButton>button:hover{ background-color:#1E40AF; }
 # ----------------------------
 PUBLICATIONS_FOLDER = "publications"
 FACULTY_LISTS_FILE = "faculty_list.md"
-MAIN_PUBLICATIONS_FILE = "publications/2025.md"  
+MAIN_PUBLICATIONS_FILE = "publications/2025.md"
 
 # ----------------------------
 # Ensure directories
 # ----------------------------
-os.makedirs(PUBLICATIONS_FOLDER, exist_ok=True)  
+os.makedirs(PUBLICATIONS_FOLDER, exist_ok=True)
 
 # ----------------------------
 # Session state
 # ----------------------------
 if 'chatbot' not in st.session_state:
     with st.spinner("🔄 Initializing publication search system..."):
-        st.session_state.chatbot = PublicationChatbot(PUBLICATIONS_FOLDER, FACULTY_LISTS_FILE)  # [attached_file:1]
+        st.session_state.chatbot = PublicationChatbot(PUBLICATIONS_FOLDER, FACULTY_LISTS_FILE)
     st.session_state.chat_history = []
     st.session_state.current_query = ""
     st.session_state.role = "guest"
     st.session_state.publications_input = ""
     st.session_state.source_input = ""
-    st.session_state.clear_inputs = False  
+    st.session_state.clear_inputs = False
 
 # ----------------------------
 # Header
 # ----------------------------
-st.markdown('<div class="main-header">📚 DUK ScholarSearch</div>', unsafe_allow_html=True)  # [attached_file:1]
-st.markdown('<div class="sub-header">Search publications</div>', unsafe_allow_html=True)  # [attached_file:1]
+st.markdown('<div class="main-header">📚 DUK ScholarSearch: Fast Publication Discovery</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-header">Search publications</div>', unsafe_allow_html=True)
 
 # ----------------------------
 # Helpers
@@ -83,8 +83,8 @@ schools = {
     "SoESA": "School of Electronic Systems and Automation",
     "SoI": "School of Informatics",
     "SoDiHLA": "School of Digital Humanities and Liberal Arts"
-}  
-school_aliases = { **{k.lower(): k for k in schools.keys()}, **{v.lower(): k for k, v in schools.items()} }  # [attached_file:1]
+}
+school_aliases = { **{k.lower(): k for k in schools.keys()}, **{v.lower(): k for k, v in schools.items()} }
 
 def is_school_query(text: str):
     t = (text or "").strip().lower()
@@ -97,7 +97,7 @@ def is_school_query(text: str):
             if tail == code.lower() or code.lower() in tail: return code
         for code, fullname in schools.items():
             if fullname.lower() in tail: return code
-    return None  
+    return None
 
 def is_plain_name_query(text: str):
     t = (text or "").strip()
@@ -105,7 +105,7 @@ def is_plain_name_query(text: str):
     tokens = re.split(r'\s+', t)
     if len(tokens) == 0 or len(tokens) > 6: return None
     if not any(re.search(r'[A-Za-z]', tok) for tok in tokens): return None
-    return t 
+    return t
 
 def route_query(q: str) -> str:
     q = (q or "").strip()
@@ -114,10 +114,10 @@ def route_query(q: str) -> str:
     if sc: return f"Publications of faculty members of {sc}"
     nm = is_plain_name_query(q)
     if nm: return f"Publications of {nm}"
-    return q  
+    return q
 
 def sorted_unique(items):
-    return sorted(set(items or []), key=lambda n: n.lower())  
+    return sorted(set(items or []), key=lambda n: n.lower())
 
 # ----------------------------
 # SIDEBAR 
@@ -134,9 +134,10 @@ with st.sidebar:
     else:
         st.success("Admin mode active")
         if st.button("Logout"):
-            st.session_state.role = "guest"; st.rerun()  
+            st.session_state.role = "guest"; st.rerun()
 
     st.markdown("---")
+    # Quick Actions heading removed
 
     st.markdown("#### 🔎 Search by School")
     selected_school = st.selectbox(
@@ -146,15 +147,15 @@ with st.sidebar:
     )
     if selected_school and st.button("🔍 Search School Publications"):
         st.session_state.current_query = f"faculty members of {selected_school}"
-        st.rerun()  # [attached_file:1]
+        st.rerun()
 
     st.markdown("---")
     st.markdown("#### 👥 Search by Faculty")
-    school_filter = st.selectbox("Select a faculty…", ["All"] + list(schools.keys()), key="faculty_filter")  # [attached_file:1]
+    school_filter = st.selectbox("Select a faculty…", ["All"] + list(schools.keys()), key="faculty_filter")
 
     def trigger_faculty_search(name: str):
         st.session_state.current_query = name
-        st.session_state.faculty_clicked = name  
+        st.session_state.faculty_clicked = name
 
     if school_filter == "All":
         all_fac = []
@@ -168,10 +169,10 @@ with st.sidebar:
         for faculty in sorted_unique(facs):
             if st.button(faculty, key=f"fac_{school_filter}_{faculty}", help="Click to view publications"):
                 trigger_faculty_search(faculty); st.rerun()
+
     st.markdown("---")
     st.markdown("### 📊 System Statistics")
-
-    # Deterministic newsletters counting: only unique PDF basenames
+    # Deterministic newsletters count: only unique PDF base names
     unique_pdfs = set()
     for src in st.session_state.chatbot.all_sources:
         s = (src or {}).get('source', '') or ''
@@ -179,22 +180,19 @@ with st.sidebar:
         if not s:
             continue
         if s.lower().endswith(".pdf") or ".pdf" in s.lower():
-            # extract last path segment and strip query/commas/spaces
             part = s.split("/")[-1].split("\\")[-1]
             part = part.split("?")[0].split(",")[0].strip()
             if part.lower().endswith(".pdf"):
                 unique_pdfs.add(part.lower())
     total_docs = len(unique_pdfs)
-
     total_schools = len(st.session_state.chatbot.school_faculties)
     total_faculty = sum(len(fac or []) for fac in st.session_state.chatbot.school_faculties.values())
-
     c1, c2 = st.columns(2)
     with c1:
         st.metric("Newsletters", total_docs)
         st.metric("Schools", total_schools)
     with c2:
-        st.metric("Faculty", total_faculty)  
+        st.metric("Faculty", total_faculty)
 
 # ----------------------------
 # Tabs
@@ -203,7 +201,7 @@ if st.session_state.role == "admin":
     tab1, tab2, tab3 = st.tabs(["🔍 Search", "🗂️ Add Publications", "📋 Search History"])
 else:
     tab1, tab3 = st.tabs(["🔍 Search", "📋 Search History"])
-    tab2 = None  
+    tab2 = None
 
 # ----------------------------
 # Search tab
@@ -219,25 +217,28 @@ with tab1:
             value=st.session_state.get('current_query', '')
         )
     with col2:
-        search_button = st.button("Search", use_container_width=True)  
+        search_button = st.button("Search", use_container_width=True)
 
+    # pick up triggered query from sidebar
     if st.session_state.get('current_query'):
         query = st.session_state.current_query
-        st.session_state.current_query = ''  
+        st.session_state.current_query = ''
 
     if search_button or query:
         if (query or "").strip():
             with st.spinner("🔎 Searching publications..."):
                 routed = route_query(query)
                 answer = st.session_state.chatbot.answer_question(routed)
+                # append to history
                 st.session_state.chat_history.insert(0, {
-                    'query': query, 'answer': answer,
+                    'query': query,
+                    'answer': answer,
                     'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 })
             st.markdown("### 📖 Results")
             st.markdown(answer)
         else:
-            st.info("ℹ️ Please enter a search query")  
+            st.info("ℹ️ Please enter a search query")
 
 # ----------------------------
 # Add Publications (admin)
@@ -251,7 +252,7 @@ def append_publications_to_file(publications_text: str, source: str) -> int:
     block = "(Source: " + source.strip() + ")\n" + "\n".join(pubs) + "\n\n"
     with open(path, "a", encoding="utf-8") as f:
         f.write(block)
-    return len(pubs)  
+    return len(pubs)
 
 def commit_to_github(commit_message: str) -> tuple[bool, str]:
     try:
@@ -270,7 +271,7 @@ def commit_to_github(commit_message: str) -> tuple[bool, str]:
     except subprocess.CalledProcessError as e:
         return False, f"Git error: {e}"
     except Exception as e:
-        return False, f"Error: {e}"  
+        return False, f"Error: {e}"
 
 if tab2 is not None:
     with tab2:
@@ -281,7 +282,7 @@ if tab2 is not None:
             st.session_state.clear_inputs = False
 
         publications_input = st.text_area(
-            "Copy paste publication list from newsletters",
+            "📰 Copy paste publication list from newsletters",
             placeholder="Author, A., & Author, B. (2025). Title... Journal ...\nAuthor, C. (2025). Title... Conference ...",
             height=220,
             key="publications_input",
@@ -319,7 +320,25 @@ if tab2 is not None:
                     time.sleep(1)
                     st.rerun()
                 else:
-                    st.error(f"Failed to commit: {msg}")  
+                    st.error(f"Failed to commit: {msg}")
+
+# ----------------------------
+# Search History tab 
+# ----------------------------
+with tab3:
+    st.markdown("### 📋 Search History")
+    if st.session_state.chat_history:
+        if st.button("🗑️ Clear History"):
+            st.session_state.chat_history = []
+            st.rerun()
+        st.markdown(f"**Total searches: {len(st.session_state.chat_history)}**")
+        st.markdown("---")
+        for entry in st.session_state.chat_history:
+            st.markdown(f"#### 🔍 {entry['query']} — {entry['timestamp']}")
+            st.markdown(entry["answer"])
+            st.markdown("---")
+    else:
+        st.info("ℹ️ No search history yet. Start searching to see your history here!")
 
 # ----------------------------
 # Footer
@@ -330,6 +349,4 @@ st.markdown("""
     <p>📚 Digital University Kerala - Publication Search System</p>
     <p>Powered by Sentence Transformers & FAISS</p>
 </div>
-""", unsafe_allow_html=True) 
-
-
+""", unsafe_allow_html=True)
