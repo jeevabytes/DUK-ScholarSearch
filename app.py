@@ -46,21 +46,21 @@ div[data-testid="stSidebar"] .stButton>button:hover{ background-color:#1E40AF; }
 # ----------------------------
 # Paths and constants
 # ----------------------------
-PUBLICATIONS_FOLDER = "publications"
+PUBLICATIONS_FILE = "publications.md"
 FACULTY_LISTS_FILE = "faculty_list.md"
-MAIN_PUBLICATIONS_FILE = "publications/2025.md"
+# MAIN_PUBLICATIONS_FILE = "publications/2025.md"
 
 # ----------------------------
 # Ensure directories
 # ----------------------------
-os.makedirs(PUBLICATIONS_FOLDER, exist_ok=True)
+# os.makedirs(PUBLICATIONS_FOLDER, exist_ok=True)
 
 # ----------------------------
 # Session state
 # ----------------------------
 if 'chatbot' not in st.session_state:
     with st.spinner("🔄 Initializing publication search system..."):
-        st.session_state.chatbot = PublicationChatbot(PUBLICATIONS_FOLDER, FACULTY_LISTS_FILE)
+        st.session_state.chatbot = PublicationChatbot(PUBLICATIONS_FILE, FACULTY_LISTS_FILE)
     st.session_state.chat_history = []
     st.session_state.current_query = ""
     st.session_state.role = "guest"
@@ -198,7 +198,13 @@ with st.sidebar:
 # Tabs
 # ----------------------------
 if st.session_state.role == "admin":
-    tab1, tab2, tab3 = st.tabs(["🔍 Search", "🗂️ Add Publications", "📋 Search History"])
+    tab1, tab2, tab3, tab4 = st.tabs([
+    "🔍 Search", 
+    "🗂️ Add Publications", 
+    "👥 Add Faculty Member",
+    "📋 Search History"
+])
+
 else:
     tab1, tab3 = st.tabs(["🔍 Search", "📋 Search History"])
     tab2 = None
@@ -244,7 +250,7 @@ with tab1:
 # Add Publications (admin)
 # ----------------------------
 def append_publications_to_file(publications_text: str, source: str) -> int:
-    path = Path(MAIN_PUBLICATIONS_FILE)
+    path = Path(PUBLICATIONS_FILE)
     if not path.exists():
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("", encoding="utf-8")
@@ -253,6 +259,91 @@ def append_publications_to_file(publications_text: str, source: str) -> int:
     with open(path, "a", encoding="utf-8") as f:
         f.write(block)
     return len(pubs)
+
+def append_faculty_to_file(school_code: str, faculty_names: list[str]) -> int:
+    """
+    Append new faculty names to faculty_list.md under the correct school.
+    Returns:
+        -1  → invalid school
+        -2  → file missing
+        -3  → school section missing
+         0  → all faculty already exist (nothing added)
+         n  → number of new faculty added
+    """
+    allowed_schools = {
+        "SoDS": "School of Digital Sciences",
+        "SoCSE": "School of Computer Science and Engineering",
+        "SoESA": "School of Electronic Systems and Automation",
+        "SoI": "School of Informatics",
+        "SoDiHLA": "School of Digital Humanities and Liberal Arts"
+    }
+
+    school_code = school_code.strip()
+    if school_code not in allowed_schools:
+        return -1
+
+    path = Path(FACULTY_LISTS_FILE)
+    if not path.exists():
+        return -2
+
+    content = path.read_text(encoding="utf-8")
+
+    # locate the school section
+    header_pattern = rf"#\s*{re.escape(allowed_schools[school_code])}\s*\({school_code}\)"
+    section_match = re.search(header_pattern, content)
+
+    if not section_match:
+        return -3
+
+    # find the position after the header line
+    header_start = section_match.start()
+    header_end = content.find("\n", header_start)
+    if header_end == -1:
+        header_end = len(content)
+
+    # extract only this section text (until next # header)
+    next_header_match = re.search(r"^# ", content[header_end+1:], flags=re.MULTILINE)
+    if next_header_match:
+        section_end = header_end + 1 + next_header_match.start()
+    else:
+        section_end = len(content)
+
+    section_text = content[header_end:section_end]
+
+    # convert existing faculty to lowercase for comparison
+    existing_faculty = set()
+    for line in section_text.splitlines():
+        if line.strip().startswith("-"):
+            name = line.replace("-", "").strip().lower()
+            if name:
+                existing_faculty.add(name)
+
+    # filter out duplicates
+    new_entries = []
+    for name in faculty_names:
+        clean = name.strip()
+        if clean and clean.lower() not in existing_faculty:
+            new_entries.append(clean)
+
+    if not new_entries:
+        return 0  # all already exist
+
+    # prepare insertion text
+    insert_text = ""
+    for name in new_entries:
+        insert_text += f"- {name}\n"
+
+    # insert after header
+    updated_content = (
+        content[:header_end+1] +
+        insert_text +
+        content[header_end+1:]
+    )
+
+    path.write_text(updated_content, encoding="utf-8")
+
+    return len(new_entries)
+
 
 def commit_to_github(commit_message: str) -> tuple[bool, str]:
     try:
@@ -263,7 +354,7 @@ def commit_to_github(commit_message: str) -> tuple[bool, str]:
             return False, "GitHub secrets not configured"
         subprocess.run(['git','config','user.email','duk-admin@example.com'], check=True)
         subprocess.run(['git','config','user.name','DUK ScholarSearch Admin'], check=True)
-        subprocess.run(['git','add', MAIN_PUBLICATIONS_FILE], check=True)
+        subprocess.run(['git','add', PUBLICATIONS_FILE], check=True)
         subprocess.run(['git','commit','-m', commit_message], check=True)
         remote_url = f"https://{token}@github.com/{repo}.git"
         subprocess.run(['git','push', remote_url, branch], check=True)
@@ -316,7 +407,7 @@ if tab2 is not None:
                     st.success(f"✅ Added {count} publication(s). {msg}")
                     st.balloons()
                     st.session_state.clear_inputs = True
-                    st.session_state.chatbot = PublicationChatbot(PUBLICATIONS_FOLDER, FACULTY_LISTS_FILE)
+                    st.session_state.chatbot = PublicationChatbot(PUBLICATIONS_FILE, FACULTY_LISTS_FILE)
                     time.sleep(1)
                     st.rerun()
                 else:
@@ -357,5 +448,67 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# ----------------------------
+# Add Faculty (admin)
+# ----------------------------
+with tab4:
+    st.markdown("### 👥 Add New Faculty Member")
 
+    # Select school
+    school_options = {
+        "SoDS": "School of Digital Sciences",
+        "SoCSE": "School of Computer Science and Engineering",
+        "SoESA": "School of Electronic Systems and Automation",
+        "SoI": "School of Informatics",
+        "SoDiHLA": "School of Digital Humanities and Liberal Arts"
+    }
+
+    selected_school = st.selectbox(
+        "Select School:",
+        [""] + list(school_options.keys()),
+        format_func=lambda x: f"{x} - {school_options[x]}" if x else "-- Choose School --"
+    )
+
+    new_faculty_input = st.text_area(
+        "Enter names (one per line):",
+        placeholder="Example:\nJohn Mathew\nAsha K\nDeepa P",
+        height=150
+    )
+
+    col_f1, col_f2 = st.columns([1,1])
+    with col_f1:
+        add_fac_btn = st.button("➕ Add Faculty", use_container_width=True)
+    with col_f2:
+        clear_fac_btn = st.button("🧹 Clear", use_container_width=True)
+
+    if clear_fac_btn:
+        st.rerun()
+
+    if add_fac_btn:
+        if not selected_school:
+            st.error("Please select a school.")
+            st.stop()
+
+        faculty_list = [f.strip() for f in new_faculty_input.split("\n") if f.strip()]
+        if not faculty_list:
+            st.error("Please enter at least one faculty member's name.")
+            st.stop()
+
+        count = append_faculty_to_file(selected_school, faculty_list)
+        if count == 0:
+            st.warning("The entered faculty name(s) already exist under this school. No new names were added.")
+        if count == -1:
+            st.error("Invalid school. Only the 5 defined schools are allowed.")
+        elif count == -2:
+            st.error("Faculty list file not found.")
+        elif count == -3:
+            st.error("School section not found in the faculty list file.")
+        else:
+            st.success(f"✅ Successfully added {count} faculty member(s).")
+
+            # reload chatbot with updated faculty list
+            st.session_state.chatbot = PublicationChatbot(PUBLICATIONS_FILE, FACULTY_LISTS_FILE)
+
+            # refresh the page so new names appear in sidebar
+            st.rerun()
 
