@@ -143,12 +143,12 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown("#### 👥 Search by Faculty member")
-    faculty_options = [""] + list(schools.keys()) 
+    faculty_options = ["All"] + list(schools.keys()) 
     school_filter = st.selectbox(
     "Select a Faculty member:",
-    faculty_options,
+    [""] + faculty_options,
     key="faculty_filter",
-    format_func=lambda x: f"{x} - {schools[x]}" if x else "-- Select Faculty Member --"
+    format_func=lambda x: x if x == "All" else (f"{x} - {schools[x]}" if x else "-- Select Faculty Member --")
     )
 
     def trigger_faculty_search(name: str):
