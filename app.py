@@ -48,13 +48,6 @@ div[data-testid="stSidebar"] .stButton>button:hover{ background-color:#1E40AF; }
 # ----------------------------
 PUBLICATIONS_FILE = "publications.md"
 FACULTY_LISTS_FILE = "faculty_list.md"
-# MAIN_PUBLICATIONS_FILE = "publications/2025.md"
-
-# ----------------------------
-# Ensure directories
-# ----------------------------
-# os.makedirs(PUBLICATIONS_FOLDER, exist_ok=True)
-
 # ----------------------------
 # Session state
 # ----------------------------
@@ -137,7 +130,6 @@ with st.sidebar:
             st.session_state.role = "guest"; st.rerun()
 
     st.markdown("---")
-    # Quick Actions heading removed
 
     st.markdown("#### 🔎 Search by School")
     selected_school = st.selectbox(
@@ -150,8 +142,14 @@ with st.sidebar:
         st.rerun()
 
     st.markdown("---")
-    st.markdown("#### 👥 Search by Faculty")
-    school_filter = st.selectbox("Select a faculty:", ["All"] + list(schools.keys()), key="faculty_filter")
+    st.markdown("#### 👥 Search by Faculty member")
+    faculty_options = [""] + list(schools.keys()) 
+    school_filter = st.selectbox(
+    "Select a Faculty member:",
+    faculty_options,
+    key="faculty_filter",
+    format_func=lambda x: f"{x} - {schools[x]}" if x else "-- Select Faculty Member --"
+    )
 
     def trigger_faculty_search(name: str):
         st.session_state.current_query = name
@@ -433,9 +431,9 @@ if tab3 is not None:
         }
 
         selected_school = st.selectbox(
-            "Select School:",
+            "Select a School:",
             [""] + list(school_options.keys()),
-            format_func=lambda x: f"{x} - {school_options[x]}" if x else "-- Choose School --"
+            format_func=lambda x: f"{x} - {school_options[x]}" if x else "-- Select School --"
         )
 
         new_faculty_input = st.text_area(
