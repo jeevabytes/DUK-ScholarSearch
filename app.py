@@ -135,6 +135,7 @@ with st.sidebar:
     selected_school = st.selectbox(
         "Select a school:",
         [""] + list(schools.keys()),
+        key="faculty_school_select",
         format_func=lambda x: f"{x} - {schools[x]}" if x else "-- Select School --"
     )
     if selected_school and st.button("🔍 Search School Publications"):
@@ -439,7 +440,8 @@ if tab3 is not None:
         new_faculty_input = st.text_area(
             "Enter names (one per line):",
             placeholder="Example:\nJohn Mathew\nAsha K\nDeepa P",
-            height=150
+            height=150,
+            key="new_faculty_input"
         )
 
         col_f1, col_f2 = st.columns([1,1])
@@ -449,6 +451,8 @@ if tab3 is not None:
             clear_fac_btn = st.button("🧹 Clear", use_container_width=True)
 
         if clear_fac_btn:
+            st.session_state.new_faculty_input = ""
+            st.session_state.faculty_school_select = ""
             st.rerun()
 
         if add_fac_btn:
