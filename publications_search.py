@@ -17,14 +17,14 @@ CANONICAL_CODES = {
 }
 
 class PublicationChatbot:
-    def __init__(self, publications_folder, faculty_lists_file):
+    def __init__(self, publications_file, faculty_lists_file):
         self.all_documents = []
         self.all_sources = []
         self.faculty_lists_file = faculty_lists_file
         self.school_faculties = {}
 
         self.load_faculty_lists(faculty_lists_file)
-        self.load_publication_files(publications_folder)
+        self.load_publication_files(publications_file)
 
         self.model = SentenceTransformer('all-MiniLM-L6-v2')
         self.embeddings = self.model.encode(self.all_documents, show_progress_bar=False)
@@ -70,69 +70,76 @@ class PublicationChatbot:
                     # Store under canonical mixed-case key (not uppercased)
                     self.school_faculties[school_code] = names
 
-    def load_publication_files(self, folder_path):
-        """Load all publication files with flexible sectioning:
-        - Start a new section on '# ' headers OR on a line that begins with 'Source:' or '(Source:'.
-        - If no header is present, use the Source line as the heading.
-        - Capture Source from the first 20 lines of each section.
+    def load_publication_files(self, file_path):
         """
-        folder = Path(folder_path)
+        Load publications from a single markdown file (e.g., publication.md)
+        with flexible sectioning:
+        - Start a new section on 'Source:' / '(Source:' lines.
+        - Extract Source from the first 20 lines of each section.
+        """
+        file = Path(file_path)
+        if not file.exists():
+            return
+
         source_boundary_re = re.compile(r'^\s*\(?\s*Source\s*:', re.IGNORECASE)
         header_re = re.compile(r'^\s*#\s+')
 
-        for file in folder.glob("*.md"):
-            with open(file, 'r', encoding='utf-8') as f:
-                lines = f.read().splitlines()
+        with open(file, 'r', encoding='utf-8') as f:
+            lines = f.read().splitlines()
 
-            sections = []
-            current = []
+        sections = []
+        current = []
 
-            def flush_current():
-                text = "\n".join(current).strip()
-                if len(text) >= 100:  # noise guard
-                    sections.append(text)
+        def flush_current():
+            text = "\n".join(current).strip()
+            if len(text) >= 50:  # noise guard
+                sections.append(text)
 
-            # Build sections using either a header or a Source line as boundaries
-            for line in lines:
-                if header_re.match(line) or source_boundary_re.match(line):
-                    if current:
-                        flush_current()
-                        current = []
-                current.append(line)
-            if current:
-                flush_current()
+        # Build sections using headers or Source lines as boundaries
+        for line in lines:
+            if header_re.match(line) or source_boundary_re.match(line):
+                if current:
+                    flush_current()
+                    current = []
+            current.append(line)
 
-            # Extract heading + source and store
-            for section in sections:
-                sec_lines = section.split("\n")
+        if current:
+            flush_current()
 
-                # Heading: prefer '# ...'; else first non-empty line (often Source)
-                heading = None
+        # Extract heading + source from each section
+        for section in sections:
+            sec_lines = section.split("\n")
+
+            # Heading: use '# ...' or first non-empty line
+            heading = None
+            for ln in sec_lines:
+                if header_re.match(ln):
+                    heading = ln.lstrip('#').strip()
+                    break
+
+            if not heading:
                 for ln in sec_lines:
-                    if header_re.match(ln):
-                        heading = ln.lstrip('#').strip()
+                    if ln.strip():
+                        heading = ln.strip()
                         break
-                if not heading:
-                    for ln in sec_lines:
-                        if ln.strip():
-                            heading = ln.strip()
-                            break
-                if not heading:
-                    heading = file.name  # fallback
+            if not heading:
+                heading = file.name  # fallback
 
-                # Source: scan first 20 lines for '(Source: ...)' or 'Source: ...'
-                first_lines = "\n".join(sec_lines[:20])
-                m = re.search(r'\(\s*Source\s*:\s*([^)]+)\)', first_lines, re.IGNORECASE)
-                if not m:
-                    m2 = re.search(r'^\s*Source\s*:\s*(.+)$', first_lines, re.IGNORECASE | re.MULTILINE)
-                source = m.group(1).strip() if m else (m2.group(1).strip() if m2 else file.name)
+            # Source extraction
+            first_lines = "\n".join(sec_lines[:20])
+            m = re.search(r'\(\s*Source\s*:\s*([^)]+)\)', first_lines, re.IGNORECASE)
+            if not m:
+                m2 = re.search(r'^\s*Source\s*:\s*(.+)$', first_lines, re.IGNORECASE | re.MULTILINE)
 
-                self.all_documents.append(section.strip())
-                self.all_sources.append({
-                    'heading': heading,
-                    'source': source,
-                    'filename': file.name
-                })
+            source = m.group(1).strip() if m else (m2.group(1).strip() if m2 else file.name)
+
+            # Save section
+            self.all_documents.append(section.strip())
+            self.all_sources.append({
+                'heading': heading,
+                'source': source,
+                'filename': file.name
+            })
 
     # ---- Ordering helpers for Sources block ----
     def _parse_year_from(self, source_text, filename):
