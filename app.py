@@ -135,7 +135,7 @@ with st.sidebar:
     selected_school = st.selectbox(
         "Select a school:",
         [""] + list(schools.keys()),
-        key="faculty_school_select",
+        key="sidebar_school_select",
         format_func=lambda x: f"{x} - {schools[x]}" if x else "-- Select School --"
     )
     if selected_school and st.button("🔍 Search School Publications"):
