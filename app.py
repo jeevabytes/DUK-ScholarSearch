@@ -357,7 +357,7 @@ def commit_to_github(commit_message: str) -> tuple[bool, str]:
             return False, "GitHub secrets not configured"
         subprocess.run(['git','config','user.email','duk-admin@example.com'], check=True)
         subprocess.run(['git','config','user.name','DUK ScholarSearch Admin'], check=True)
-        subprocess.run(['git','add', PUBLICATIONS_FILE], check=True)
+        subprocess.run(['git', 'add', PUBLICATIONS_FILE, FACULTY_LISTS_FILE], check=True)
         subprocess.run(['git','commit','-m', commit_message], check=True)
         remote_url = f"https://{token}@github.com/{repo}.git"
         subprocess.run(['git','push', remote_url, branch], check=True)
@@ -472,7 +472,14 @@ if tab3 is not None:
                 st.error("School section not found in the faculty list file.")
             else:
                 st.success(f"✅ Successfully added {count} faculty member(s).")
+                # --- Commit updated faculty_list.md to GitHub ---
+                commit_msg = f"Admin: added {count} faculty member(s) [{datetime.now().strftime('%Y-%m-%d %H:%M')}]"
+                ok, msg = commit_to_github(commit_msg)
 
+                if ok:
+                    st.info(msg)
+                else:
+                    st.error(f"Commit failed: {msg}")
                 #  reload chatbot with updated faculty list
                 st.session_state.chatbot = PublicationChatbot(PUBLICATIONS_FILE, FACULTY_LISTS_FILE)
 
@@ -513,3 +520,5 @@ st.markdown("""
     <p>Powered by Sentence Transformers & FAISS</p>
 </div>
 """, unsafe_allow_html=True)
+
+
