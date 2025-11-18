@@ -1,4 +1,5 @@
 # School of Digital Sciences (SoDS)
+- Aman
 - Ajith Kumar R
 - Anoop Ayyappan 
 - Aswin V S 
