@@ -31,8 +31,6 @@
 - Sumit Datta
 
 # School of Informatics (SoI)
-- Honest
-- Laya
 - Athira K
 - Jaishanker R
 - Sooraj N P
