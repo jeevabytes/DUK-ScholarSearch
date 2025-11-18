@@ -434,6 +434,7 @@ if tab3 is not None:
         selected_school = st.selectbox(
             "Select a School:",
             [""] + list(school_options.keys()),
+            key="faculty_school_select",
             format_func=lambda x: f"{x} - {school_options[x]}" if x else "-- Select School --"
         )
 
