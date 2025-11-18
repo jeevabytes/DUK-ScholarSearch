@@ -207,7 +207,7 @@ if st.session_state.role == "admin":
 
 else:
     tab1, tab4 = st.tabs(["🔍 Search", "📋 Search History"])
-    tab2, tab3 = None
+    tab2, tab3 = None, None
 
 # ----------------------------
 # Search tab
@@ -507,4 +507,5 @@ st.markdown("""
     <p>Powered by Sentence Transformers & FAISS</p>
 </div>
 """, unsafe_allow_html=True)
+
 
