@@ -279,8 +279,6 @@ def append_faculty_to_file(school_code: str, faculty_names: list[str]) -> int:
     }
 
     school_code = school_code.strip()
-    if school_code not in allowed_schools:
-        return -1
 
     path = Path(FACULTY_LISTS_FILE)
     if not path.exists():
@@ -414,44 +412,9 @@ if tab2 is not None:
                     st.error(f"Failed to commit: {msg}")
 
 # ----------------------------
-# Search History tab 
-# ----------------------------
-with tab3:
-    st.markdown("### 📋 Search History")
-    if st.session_state.chat_history:
-        top_cols = st.columns([3, 1])
-        with top_cols[0]:
-            st.markdown(f"**Total searches: {len(st.session_state.chat_history)}**")
-        with top_cols[1]:
-            if st.button("🗑️ Clear History", use_container_width=True):
-                st.session_state.chat_history = []
-                st.rerun()
-
-        st.markdown("---")
-
-        # Each entry in its own top-level expander (no nesting)
-        for i, entry in enumerate(st.session_state.chat_history, start=1):
-            label = f"🔎 {entry['query']} — {entry['timestamp']}"
-            with st.expander(label, expanded=False):
-                st.markdown(entry["answer"])
-    else:
-        st.info("ℹ️ No search history yet. Start searching to see your history here!")
-
-# ----------------------------
-# Footer
-# ----------------------------
-st.markdown("---")
-st.markdown("""
-<div style='text-align: center; color: #6B7280; padding: 1rem;'>
-    <p>📚 Digital University Kerala - Publication Search System</p>
-    <p>Powered by Sentence Transformers & FAISS</p>
-</div>
-""", unsafe_allow_html=True)
-
-# ----------------------------
 # Add Faculty (admin)
 # ----------------------------
-with tab4:
+with tab3:
     st.markdown("### 👥 Add New Faculty Member")
 
     # Select school
@@ -497,8 +460,6 @@ with tab4:
         count = append_faculty_to_file(selected_school, faculty_list)
         if count == 0:
             st.warning("The entered faculty name(s) already exist under this school. No new names were added.")
-        if count == -1:
-            st.error("Invalid school. Only the 5 defined schools are allowed.")
         elif count == -2:
             st.error("Faculty list file not found.")
         elif count == -3:
@@ -512,3 +473,37 @@ with tab4:
             # refresh the page so new names appear in sidebar
             st.rerun()
 
+# ----------------------------
+# Search History tab 
+# ----------------------------
+with tab4:
+    st.markdown("### 📋 Search History")
+    if st.session_state.chat_history:
+        top_cols = st.columns([3, 1])
+        with top_cols[0]:
+            st.markdown(f"**Total searches: {len(st.session_state.chat_history)}**")
+        with top_cols[1]:
+            if st.button("🗑️ Clear History", use_container_width=True):
+                st.session_state.chat_history = []
+                st.rerun()
+
+        st.markdown("---")
+
+        # Each entry in its own top-level expander (no nesting)
+        for i, entry in enumerate(st.session_state.chat_history, start=1):
+            label = f"🔎 {entry['query']} — {entry['timestamp']}"
+            with st.expander(label, expanded=False):
+                st.markdown(entry["answer"])
+    else:
+        st.info("ℹ️ No search history yet. Start searching to see your history here!")
+
+# ----------------------------
+# Footer
+# ----------------------------
+st.markdown("---")
+st.markdown("""
+<div style='text-align: center; color: #6B7280; padding: 1rem;'>
+    <p>📚 Digital University Kerala - Publication Search System</p>
+    <p>Powered by Sentence Transformers & FAISS</p>
+</div>
+""", unsafe_allow_html=True)
