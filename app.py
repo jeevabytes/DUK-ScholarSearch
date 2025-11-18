@@ -60,6 +60,8 @@ if 'chatbot' not in st.session_state:
     st.session_state.publications_input = ""
     st.session_state.source_input = ""
     st.session_state.clear_inputs = False
+    # flag for faculty clear
+    st.session_state.clear_faculty_inputs = False
 
 # ----------------------------
 # Header
@@ -369,9 +371,11 @@ def commit_to_github(commit_message: str) -> tuple[bool, str]:
 if tab2 is not None:
     with tab2:
         st.markdown("### Add New Publications")
-        if st.session_state.clear_inputs:
-            st.session_state.publications_input = ""
-            st.session_state.source_input = ""
+
+        # If clear flag is set, reset the widget keys BEFORE widget creation
+        if st.session_state.get("clear_inputs", False):
+            st.session_state["publications_input"] = ""
+            st.session_state["source_input"] = ""
             st.session_state.clear_inputs = False
 
         publications_input = st.text_area(
@@ -389,9 +393,9 @@ if tab2 is not None:
         with col_b:
             clear = st.button("🧹 Clear Inputs", use_container_width=True)
 
+        # When clear is clicked, set the flag and rerun (do NOT assign widget-backed keys here)
         if clear:
-            st.session_state.publications_input = ""
-            st.session_state.source_input = ""
+            st.session_state.clear_inputs = True
             st.rerun()
 
         if submit:
@@ -408,6 +412,7 @@ if tab2 is not None:
                 if ok:
                     st.success(f"✅ Added {count} publication(s). {msg}")
                     st.balloons()
+                    # set flag to clear inputs (will be reset at top of tab on rerun)
                     st.session_state.clear_inputs = True
                     st.session_state.chatbot = PublicationChatbot(PUBLICATIONS_FILE, FACULTY_LISTS_FILE)
                     time.sleep(1)
@@ -421,6 +426,14 @@ if tab2 is not None:
 if tab3 is not None:
     with tab3:
         st.markdown("### 👥 Add New Faculty Member")
+
+        # If clear_faculty_inputs flag is set, reset faculty widget keys BEFORE widget creation
+        if st.session_state.get("clear_faculty_inputs", False):
+            st.session_state["new_faculty_input"] = ""
+            # reset selected school key if present
+            if "faculty_school_select" in st.session_state:
+                st.session_state["faculty_school_select"] = ""
+            st.session_state.clear_faculty_inputs = False
 
         # Select school
         school_options = {
@@ -451,9 +464,9 @@ if tab3 is not None:
         with col_f2:
             clear_fac_btn = st.button("🧹 Clear", use_container_width=True)
 
+        # When clear_fac_btn clicked, set a flag and rerun (do NOT assign widget-backed keys here)
         if clear_fac_btn:
-            st.session_state.new_faculty_input = ""
-            st.session_state.faculty_school_select = ""
+            st.session_state.clear_faculty_inputs = True
             st.rerun()
 
         if add_fac_btn:
@@ -523,5 +536,3 @@ st.markdown("""
     <p>Powered by Sentence Transformers & FAISS</p>
 </div>
 """, unsafe_allow_html=True)
-
-
