@@ -144,16 +144,32 @@ class PublicationChatbot:
     # ---- Ordering helpers for Sources block ----
     def _parse_year_from(self, source_text, filename):
         s = (source_text or '').upper()
+
+        # 4-digit year (ideal case)
         m = re.search(r'(20\d{2})', s)
         if m:
             return int(m.group(1))
-        mf = re.search(r'(20\d{2})', filename)
-        return int(mf.group(1)) if mf else 9999
+
+        # Handle 2-digit years like '25' → assume 2025
+        m2 = re.search(r'(?<!\d)(\d{2})(?!\d)', s)
+        if m2:
+            return 2000 + int(m2.group(1))
+
+        # fallback to filename
+        mf = re.search(r'(20\d{2})', (filename or '').upper())
+        if mf:
+            return int(mf.group(1))
+
+        mf2 = re.search(r'(?<!\d)(\d{2})(?!\d)', (filename or '').upper())
+        if mf2:
+            return 2000 + int(mf2.group(1))
+
+        return 9999
 
     def _parse_month_from(self, source_text):
         s = (source_text or '').upper()
         for m in MONTHS:
-            if s.startswith(m) or f'{m} ' in s or f'{m}-' in s or f'{m}_' in s:
+            if m in s:
                 return MONTH2NUM[m]
         return 99
 
@@ -165,6 +181,7 @@ class PublicationChatbot:
             keyed.append(((yr, mo, i), d))
         keyed.sort(key=lambda x: x[0], reverse=descending)
         return [d for _, d in keyed]
+
 
     # ---- Name handling and search ----
     def generate_name_variants(self, name):
