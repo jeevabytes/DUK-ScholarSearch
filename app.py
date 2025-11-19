@@ -148,10 +148,10 @@ with st.sidebar:
     st.markdown("#### 👥 Search by Faculty member")
     faculty_options = ["All"] + list(schools.keys()) 
     school_filter = st.selectbox(
-    "Select a Faculty member:",
+    "Select a School:",
     [""] + faculty_options,
     key="faculty_filter",
-    format_func=lambda x: x if x == "All" else (f"{x} - {schools[x]}" if x else "-- Select Faculty Member --")
+    format_func=lambda x: x if x == "All" else (f"{x} - {schools[x]}" if x else "-- Select School --")
     )
 
     def trigger_faculty_search(name: str):
@@ -193,7 +193,7 @@ with st.sidebar:
         st.metric("Newsletters", total_docs)
         st.metric("Schools", total_schools)
     with c2:
-        st.metric("Faculty", total_faculty)
+        st.metric("Faculty members", total_faculty)
 
 # ----------------------------
 # Tabs
@@ -223,7 +223,7 @@ with tab1:
     col1, col2 = st.columns([3, 1])
     with col1:
         query = st.text_input(
-            "Enter an author or a school",
+            "Enter an author or a school or choose from the sidebar",
             placeholder="e.g., K Satheesh Kumar OR faculty members of SoDS",
             key="search_input",
             value=st.session_state.get('current_query', '')
