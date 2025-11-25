@@ -416,3 +416,11 @@ Aswin, P. J., Gopal, K. G., Aswathi, M., Christa Mary, V. J., Devu, R., & Sherin
 Nair, A. S., Vijay, J. V. P., & Thampi, S. M. (in press). SoCoMNNet: A socio-cognitive and memristive neural network-based context-aware GPS spoofing detection and mitigation in the Internet of Drones. Vehicular Communications. Elsevier.
 Ibrahim, V., Alaya Cheikh, F., Asari, V. K., & Paul, J. S. (2025). Extrapolation convolution for data prediction on a 2-D grid: Bridging spatial and frequency domains with applications in image outpainting and compressed sensing.
 
+(Source: OCT 25 page 22)
+Madukrishnan, M. M., Vishnupriya, M., Jayarajan, R. O., Sherin, D. R., Arya, J. S., Prasad, M. M., Jayasree, E. G., Lekha, N. K., Panicker, S. P., & Maiti, K. K. (2025). Repurposing nano-dimensions of a small phytomolecule, Rhein, into nano-Rhein to unveil its efficacy on hypercalciuria-induced nephropathies on a SERS-based calcification profiling platform. Advanced Healthcare Materials, e04133. https://doi.org/10.1002/adhm.202504133
+Diwan, M., Zhang, S., Li, Z., James, A., & Choubey, B. (2025). Non-volatile ReRAM-based compact event-triggered counters. IEEE Journal on Exploratory Solid-State Computational Devices and Circuits, 11(4). https://doi.org/10.1109/JXCDC.2025.3619415
+Nair, A. S., Thampi, S. M., & Vijay, J. V. P. (2025). SoCoMNNet: A SocioCognitive and memristive neural network-based context-aware GPS spoofing detection and mitigation in the Internet of drones. Vehicular Communications, 56, 100980. https://doi.org/10.1016/j.vehcom.2025.100980
+Dhanush, B. R. (2025, October). Artificial Intelligence in Crop Disease Detection – Early Warning Systems for Pest and Disease Management. Kerala Karshakan E-Journal.Govt. of Kerala. https://drive.google.com/file/d/1lg9K3bUk3TYPnYqgAYLEaUBhBH2X9YXV/view
+Dhanush, B. R. (2025). Kalathinothakrishik Geoinformatics. Kerala Karshakan, Government of Kerala.
+https://drive.google.com/file/d/1lg9K3bUk3TYPnYqgAYLEaUBhBH2X9YXV/view
+
